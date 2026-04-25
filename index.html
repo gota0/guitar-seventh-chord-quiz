@@ -187,14 +187,17 @@
   let intervalId = null;
 
   // -------- Generation --------
-  function generate() {
+  function generate(prev) {
     const stringNum = Math.random() < 0.5 ? 6 : 5;
     const map = stringNum === 6 ? sixthString : fifthString;
     const maxFret = stringNum === 6 ? 8 : 7;
     const fret = 1 + Math.floor(Math.random() * maxFret);
     const noteName = pick(map[fret]);
     const chordType = pick(chordTypes);
-    current = { stringNum, fret, noteName, chordType };
+    const next = { stringNum, fret, noteName, chordType };
+    if (prev && noteName + chordType === prev.noteName + prev.chordType)
+      return generate(prev);
+    return next;
   }
 
   // -------- Rendering --------
@@ -325,7 +328,7 @@
       phase = 'showing';
       tick(5, 'showing', () => {
         if (phase === 'idle') return;
-        generate();
+        current = generate(current);
         runGuessing();
       });
     });
@@ -337,7 +340,7 @@
     phase = 'showing';
     tick(5, 'showing', () => {
       if (phase === 'idle') return;
-      generate();
+      current = generate(current);
       runGuessing();
     });
   }
@@ -353,7 +356,7 @@
     } else if (current && resumePhase === 'showing') {
       runShowing();
     } else {
-      generate();
+      current = generate(null);
       runGuessing();
     }
   }
