@@ -320,7 +320,7 @@
     generate();
     showQuestion();
     phase = 'guessing';
-    tick(7, 'guessing', () => {
+    tick(5, 'guessing', () => {
       if (phase === 'idle') return;
       showAnswer();
       phase = 'showing';
