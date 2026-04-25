@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Seventh Chord Root Quiz</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #1a1a1a;
+    color: #f0f0f0;
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .card {
+    background: #262626;
+    border-radius: 16px;
+    padding: 32px;
+    width: 100%;
+    max-width: 480px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    text-align: center;
+  }
+  h1 {
+    font-size: 18px;
+    font-weight: 500;
+    color: #888;
+    margin: 0 0 20px;
+    letter-spacing: 0.5px;
+  }
+  .string-label {
+    font-size: 13px;
+    color: #888;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    min-height: 18px;
+    margin-bottom: 8px;
+  }
+  .question {
+    font-size: 60px;
+    font-weight: 700;
+    margin: 8px 0;
+    min-height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    letter-spacing: -1px;
+  }
+  .countdown {
+    font-size: 14px;
+    margin: 8px 0 16px;
+    height: 22px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .countdown.guessing { color: #fbbf24; }
+  .countdown.showing  { color: #4ade80; }
+  .countdown.idle     { color: #555; }
+
+  .diagram {
+    margin: 8px 0;
+    min-height: 160px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .diagram svg {
+    width: 100%;
+    max-width: 360px;
+    height: auto;
+  }
+  .answer {
+    font-size: 18px;
+    font-weight: 500;
+    min-height: 28px;
+    color: #4ade80;
+  }
+  .controls {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+  }
+  button {
+    flex: 1;
+    padding: 14px;
+    font-size: 15px;
+    font-weight: 600;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: transform 0.1s, background 0.2s;
+    letter-spacing: 0.3px;
+  }
+  button:active { transform: scale(0.97); }
+  .btn-start { background: #3b82f6; color: white; }
+  .btn-start:hover { background: #2563eb; }
+  .btn-stop  { background: #b91c1c; color: white; }
+  .btn-stop:hover { background: #991b1b; }
+  .placeholder { color: #444; }
+  .stats {
+    margin-top: 16px;
+    font-size: 12px;
+    color: #666;
+  }
+  kbd {
+    background: #333;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+    color: #aaa;
+    border: 1px solid #444;
+  }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>Seventh Chord Root Quiz</h1>
+    <div class="string-label" id="stringLabel">Press start to begin</div>
+    <div class="question placeholder" id="question">—</div>
+    <div class="countdown idle" id="countdown">&nbsp;</div>
+    <div class="diagram" id="diagram"></div>
+    <div class="answer" id="answer">&nbsp;</div>
+    <div class="controls">
+      <button class="btn-start" id="toggleBtn">Start</button>
+    </div>
+    <div class="stats"><kbd>Space</kbd> start / stop</div>
+  </div>
+
+<script>
+  // -------- Note maps (string -> fret -> note name options) --------
+  // Limits chosen so all chord-shape notes stay at fret <= 9.
+  // 6th string (low E): R fret 1..8.  5th string (A): R fret 1..7.
+  const sixthString = [
+    null, ['F'], ['F#','Gb'], ['G'], ['G#','Ab'],
+    ['A'], ['A#','Bb'], ['B'], ['C']
+  ];
+  const fifthString = [
+    null, ['A#','Bb'], ['B'], ['C'], ['C#','Db'],
+    ['D'], ['D#','Eb'], ['E']
+  ];
+
+  const chordTypes = ['maj7', '-7', '7', '-7(♭5)'];
+
+  // Shapes: list of {s: string, df: fret offset from root, root?}
+  // Strings are guitar-numbered (1=high E ... 6=low E).
+  const shapes = {
+    6: {
+      'maj7':   [{s:6, df:0, root:true}, {s:4, df:1}, {s:3, df:1}, {s:2, df:0}],
+      '-7':     [{s:6, df:0, root:true}, {s:4, df:0}, {s:3, df:0}, {s:2, df:0}],
+      '7':      [{s:6, df:0, root:true}, {s:4, df:0}, {s:3, df:1}, {s:2, df:0}],
+      '-7(♭5)': [{s:6, df:0, root:true}, {s:4, df:0}, {s:3, df:0}, {s:2, df:-1}]
+    },
+    5: {
+      'maj7':   [{s:5, df:0, root:true}, {s:4, df:2}, {s:3, df:1}, {s:2, df:2}],
+      '-7':     [{s:5, df:0, root:true}, {s:4, df:2}, {s:3, df:0}, {s:2, df:1}],
+      '7':      [{s:5, df:0, root:true}, {s:4, df:2}, {s:3, df:0}, {s:2, df:2}],
+      '-7(♭5)': [{s:5, df:0, root:true}, {s:4, df:1}, {s:3, df:0}, {s:2, df:1}]
+    }
+  };
+
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+
+  // -------- State --------
+  let current = null;       // {stringNum, fret, noteName, chordType}
+  let phase = 'idle';       // 'idle' | 'guessing' | 'showing'
+  let intervalId = null;
+
+  // -------- Generation --------
+  function generate() {
+    const stringNum = Math.random() < 0.5 ? 6 : 5;
+    const map = stringNum === 6 ? sixthString : fifthString;
+    const maxFret = stringNum === 6 ? 8 : 7;
+    const fret = 1 + Math.floor(Math.random() * maxFret);
+    const noteName = pick(map[fret]);
+    const chordType = pick(chordTypes);
+    current = { stringNum, fret, noteName, chordType };
+  }
+
+  // -------- Rendering --------
+  function showQuestion() {
+    const { stringNum, noteName, chordType } = current;
+    document.getElementById('stringLabel').textContent =
+      stringNum === 6 ? 'Root on 6th string (low E)' : 'Root on 5th string (A)';
+    const q = document.getElementById('question');
+    q.textContent = noteName + chordType;
+    q.classList.remove('placeholder');
+    document.getElementById('answer').innerHTML = '&nbsp;';
+    document.getElementById('diagram').innerHTML = '';
+  }
+
+  function showAnswer() {
+    const { stringNum, fret, noteName, chordType } = current;
+    document.getElementById('diagram').innerHTML = drawDiagram(stringNum, chordType, fret);
+    const stringLabel = stringNum === 6 ? '6th string (low E)' : '5th string (A)';
+    document.getElementById('answer').innerHTML =
+      `Fret ${fret} · ${stringLabel} · ${noteName}`;
+  }
+
+  function setCountdown(sec, cls) {
+    const el = document.getElementById('countdown');
+    el.className = 'countdown ' + cls;
+    if (cls === 'guessing') el.textContent = `Guess… ${sec}`;
+    else if (cls === 'showing') el.textContent = `Answer · ${sec}`;
+    else el.textContent = '\u00A0';
+  }
+
+  // -------- Fretboard SVG --------
+  function drawDiagram(stringNum, chordType, rootFret) {
+    const shape = shapes[stringNum][chordType];
+    const ws = Math.max(1, rootFret - 1); // window start fret (5 cells)
+
+    const W = 360, H = 170;
+    const fbStartX = 60, fbEndX = 330;
+    const cellW = (fbEndX - fbStartX) / 5;
+    const sTop = 30, sBot = 130;
+    const sStep = (sBot - sTop) / 5;
+
+    const stringY = s => sTop + (s - 1) * sStep;
+    const fretLineX = i => fbStartX + i * cellW;
+    const cellCenterX = k => fbStartX + (k - 0.5) * cellW;
+
+    const stringNames = ['e','B','G','D','A','E']; // strings 1..6 from top
+
+    let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, sans-serif">`;
+
+    // String name labels (left side)
+    for (let s = 1; s <= 6; s++) {
+      svg += `<text x="${fbStartX - 36}" y="${stringY(s) + 4}" fill="#666" font-size="11" text-anchor="middle">${stringNames[s-1]}</text>`;
+    }
+
+    // Strings (horizontal)
+    for (let s = 1; s <= 6; s++) {
+      const w = 0.8 + (s - 1) * 0.15; // thicker for lower strings
+      svg += `<line x1="${fbStartX}" y1="${stringY(s)}" x2="${fbEndX}" y2="${stringY(s)}" stroke="#888" stroke-width="${w.toFixed(2)}"/>`;
+    }
+
+    // Fret lines (vertical) — 6 lines for 5 cells
+    for (let i = 0; i <= 5; i++) {
+      const x = fretLineX(i);
+      const isNut = (i === 0 && ws === 1);
+      svg += `<line x1="${x}" y1="${sTop}" x2="${x}" y2="${sBot}" stroke="${isNut ? '#fff' : '#777'}" stroke-width="${isNut ? 4 : 1.5}"/>`;
+    }
+
+    // Fret number under leftmost cell
+    svg += `<text x="${cellCenterX(1)}" y="${sBot + 22}" fill="#888" font-size="12" text-anchor="middle">${ws}fr</text>`;
+
+    // Mute X markers for unused strings
+    const usedStrings = new Set(shape.map(n => n.s));
+    for (let s = 1; s <= 6; s++) {
+      if (!usedStrings.has(s)) {
+        svg += `<text x="${fbStartX - 14}" y="${stringY(s) + 5}" fill="#666" font-size="14" text-anchor="middle">×</text>`;
+      }
+    }
+
+    // Notes
+    for (const note of shape) {
+      const f = rootFret + note.df;
+      const y = stringY(note.s);
+      let x;
+      if (f === 0 && ws === 1) {
+        // Open string — draw "O" just to the left of the nut
+        svg += `<circle cx="${fbStartX - 14}" cy="${y}" r="6" fill="none" stroke="#fff" stroke-width="1.5"/>`;
+        continue;
+      }
+      if (f >= ws && f <= ws + 4) {
+        x = cellCenterX(f - ws + 1);
+      } else {
+        continue;
+      }
+      if (note.root) {
+        svg += `<circle cx="${x}" cy="${y}" r="11" fill="#3b82f6" stroke="#fff" stroke-width="2.5"/>`;
+        svg += `<text x="${x}" y="${y + 4}" fill="#fff" font-size="11" font-weight="700" text-anchor="middle">R</text>`;
+      } else {
+        svg += `<circle cx="${x}" cy="${y}" r="9" fill="#f0f0f0"/>`;
+      }
+    }
+
+    svg += `</svg>`;
+    return svg;
+  }
+
+  // -------- Cycle / Timer --------
+  function tick(sec, cls, done) {
+    let t = sec;
+    setCountdown(t, cls);
+    intervalId = setInterval(() => {
+      t--;
+      if (t > 0) {
+        setCountdown(t, cls);
+      } else {
+        clearInterval(intervalId);
+        intervalId = null;
+        done();
+      }
+    }, 1000);
+  }
+
+  function nextRound() {
+    if (phase === 'idle') return;
+    generate();
+    showQuestion();
+    phase = 'guessing';
+    tick(10, 'guessing', () => {
+      if (phase === 'idle') return;
+      showAnswer();
+      phase = 'showing';
+      tick(5, 'showing', () => {
+        if (phase === 'idle') return;
+        nextRound();
+      });
+    });
+  }
+
+  function start() {
+    phase = 'guessing'; // primed
+    document.getElementById('toggleBtn').textContent = 'Stop';
+    document.getElementById('toggleBtn').classList.remove('btn-start');
+    document.getElementById('toggleBtn').classList.add('btn-stop');
+    nextRound();
+  }
+
+  function stop() {
+    phase = 'idle';
+    if (intervalId) { clearInterval(intervalId); intervalId = null; }
+    setCountdown(0, 'idle');
+    document.getElementById('toggleBtn').textContent = 'Start';
+    document.getElementById('toggleBtn').classList.remove('btn-stop');
+    document.getElementById('toggleBtn').classList.add('btn-start');
+  }
+
+  function toggle() {
+    if (phase === 'idle') start();
+    else stop();
+  }
+
+  document.getElementById('toggleBtn').addEventListener('click', toggle);
+  document.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); toggle(); }
+  });
+</script>
+</body>
+</html>
