@@ -183,6 +183,7 @@
   // -------- State --------
   let current = null;       // {stringNum, fret, noteName, chordType}
   let phase = 'idle';       // 'idle' | 'guessing' | 'showing'
+  let pausedPhase = null;   // phase saved when stopped
   let intervalId = null;
 
   // -------- Generation --------
@@ -315,9 +316,7 @@
     }, 1000);
   }
 
-  function nextRound() {
-    if (phase === 'idle') return;
-    generate();
+  function runGuessing() {
     showQuestion();
     phase = 'guessing';
     tick(5, 'guessing', () => {
@@ -326,20 +325,41 @@
       phase = 'showing';
       tick(5, 'showing', () => {
         if (phase === 'idle') return;
-        nextRound();
+        generate();
+        runGuessing();
       });
     });
   }
 
+  function runShowing() {
+    showQuestion();
+    showAnswer();
+    phase = 'showing';
+    tick(5, 'showing', () => {
+      if (phase === 'idle') return;
+      generate();
+      runGuessing();
+    });
+  }
+
   function start() {
-    phase = 'guessing'; // primed
     document.getElementById('toggleBtn').textContent = 'Stop';
     document.getElementById('toggleBtn').classList.remove('btn-start');
     document.getElementById('toggleBtn').classList.add('btn-stop');
-    nextRound();
+    const resumePhase = pausedPhase;
+    pausedPhase = null;
+    if (current && resumePhase === 'guessing') {
+      runGuessing();
+    } else if (current && resumePhase === 'showing') {
+      runShowing();
+    } else {
+      generate();
+      runGuessing();
+    }
   }
 
   function stop() {
+    pausedPhase = phase;
     phase = 'idle';
     if (intervalId) { clearInterval(intervalId); intervalId = null; }
     setCountdown(0, 'idle');
