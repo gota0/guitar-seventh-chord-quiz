@@ -165,16 +165,16 @@
   // Strings are guitar-numbered (1=high E ... 6=low E).
   const shapes = {
     6: {
-      'maj7':   [{s:6, df:0, root:true}, {s:4, df:1}, {s:3, df:1}, {s:2, df:0}],
-      '-7':     [{s:6, df:0, root:true}, {s:4, df:0}, {s:3, df:0}, {s:2, df:0}],
-      '7':      [{s:6, df:0, root:true}, {s:4, df:0}, {s:3, df:1}, {s:2, df:0}],
-      '-7(♭5)': [{s:6, df:0, root:true}, {s:4, df:0}, {s:3, df:0}, {s:2, df:-1}]
+      'maj7':   [{s:6, df:0, root:true, label:'R'}, {s:4, df:1, label:'M7'}, {s:3, df:1, label:'M3'}, {s:2, df:0, label:'P5'}],
+      '-7':     [{s:6, df:0, root:true, label:'R'}, {s:4, df:0, label:'-7'}, {s:3, df:0, label:'-3'}, {s:2, df:0, label:'P5'}],
+      '7':      [{s:6, df:0, root:true, label:'R'}, {s:4, df:0, label:'-7'}, {s:3, df:1, label:'M3'}, {s:2, df:0, label:'P5'}],
+      '-7(♭5)': [{s:6, df:0, root:true, label:'R'}, {s:4, df:0, label:'-7'}, {s:3, df:0, label:'-3'}, {s:2, df:-1, label:'♭5'}]
     },
     5: {
-      'maj7':   [{s:5, df:0, root:true}, {s:4, df:2}, {s:3, df:1}, {s:2, df:2}],
-      '-7':     [{s:5, df:0, root:true}, {s:4, df:2}, {s:3, df:0}, {s:2, df:1}],
-      '7':      [{s:5, df:0, root:true}, {s:4, df:2}, {s:3, df:0}, {s:2, df:2}],
-      '-7(♭5)': [{s:5, df:0, root:true}, {s:4, df:1}, {s:3, df:0}, {s:2, df:1}]
+      'maj7':   [{s:5, df:0, root:true, label:'R'}, {s:4, df:2, label:'P5'}, {s:3, df:1, label:'M7'}, {s:2, df:2, label:'M3'}],
+      '-7':     [{s:5, df:0, root:true, label:'R'}, {s:4, df:2, label:'P5'}, {s:3, df:0, label:'-7'}, {s:2, df:1, label:'-3'}],
+      '7':      [{s:5, df:0, root:true, label:'R'}, {s:4, df:2, label:'P5'}, {s:3, df:0, label:'-7'}, {s:2, df:2, label:'M3'}],
+      '-7(♭5)': [{s:5, df:0, root:true, label:'R'}, {s:4, df:1, label:'♭5'}, {s:3, df:0, label:'-7'}, {s:2, df:1, label:'-3'}]
     }
   };
 
@@ -290,7 +290,8 @@
         svg += `<circle cx="${x}" cy="${y}" r="14" fill="#3b82f6" stroke="#fff" stroke-width="2.5"/>`;
         svg += `<text x="${x}" y="${y + 5}" fill="#fff" font-size="14" font-weight="700" text-anchor="middle">R</text>`;
       } else {
-        svg += `<circle cx="${x}" cy="${y}" r="12" fill="#f0f0f0"/>`;
+        svg += `<circle cx="${x}" cy="${y}" r="14" fill="#f0f0f0"/>`;
+        svg += `<text x="${x}" y="${y + 5}" fill="#1a1a1a" font-size="12" font-weight="700" text-anchor="middle">${note.label}</text>`;
       }
     }
 
