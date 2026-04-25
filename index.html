@@ -22,7 +22,7 @@
     border-radius: 16px;
     padding: 32px;
     width: 100%;
-    max-width: 480px;
+    max-width: 640px;
     box-shadow: 0 8px 32px rgba(0,0,0,0.4);
     text-align: center;
   }
@@ -66,20 +66,20 @@
 
   .diagram {
     margin: 8px 0;
-    min-height: 160px;
+    min-height: 360px;
     display: flex;
     align-items: center;
     justify-content: center;
   }
   .diagram svg {
     width: 100%;
-    max-width: 360px;
+    max-width: 560px;
     height: auto;
   }
   .answer {
-    font-size: 18px;
+    font-size: 30px;
     font-weight: 500;
-    min-height: 28px;
+    min-height: 38px;
     color: #4ade80;
   }
   .controls {
@@ -116,6 +116,19 @@
     font-size: 11px;
     color: #aaa;
     border: 1px solid #444;
+  }
+  @media (max-height: 700px) {
+    body { padding: 10px; }
+    .card { padding: 16px 20px; }
+    h1 { font-size: 15px; margin-bottom: 8px; }
+    .string-label { margin-bottom: 2px; }
+    .question { font-size: 48px; min-height: 58px; margin: 2px 0; }
+    .countdown { margin: 2px 0 6px; height: 18px; font-size: 12px; }
+    .diagram { min-height: 0; margin: 2px 0; }
+    .answer { font-size: 24px; min-height: 30px; }
+    .controls { margin-top: 12px; }
+    button { padding: 11px; font-size: 14px; }
+    .stats { margin-top: 8px; }
   }
 </style>
 </head>
@@ -198,9 +211,8 @@
   function showAnswer() {
     const { stringNum, fret, noteName, chordType } = current;
     document.getElementById('diagram').innerHTML = drawDiagram(stringNum, chordType, fret);
-    const stringLabel = stringNum === 6 ? '6th string (low E)' : '5th string (A)';
     document.getElementById('answer').innerHTML =
-      `Fret ${fret} · ${stringLabel} · ${noteName}`;
+      `Root Fret ${fret}`;
   }
 
   function setCountdown(sec, cls) {
@@ -216,10 +228,10 @@
     const shape = shapes[stringNum][chordType];
     const ws = Math.max(1, rootFret - 1); // window start fret (5 cells)
 
-    const W = 360, H = 170;
+    const W = 360, H = 240;
     const fbStartX = 60, fbEndX = 330;
     const cellW = (fbEndX - fbStartX) / 5;
-    const sTop = 30, sBot = 130;
+    const sTop = 30, sBot = 195;
     const sStep = (sBot - sTop) / 5;
 
     const stringY = s => sTop + (s - 1) * sStep;
@@ -266,7 +278,7 @@
       let x;
       if (f === 0 && ws === 1) {
         // Open string — draw "O" just to the left of the nut
-        svg += `<circle cx="${fbStartX - 14}" cy="${y}" r="6" fill="none" stroke="#fff" stroke-width="1.5"/>`;
+        svg += `<circle cx="${fbStartX - 14}" cy="${y}" r="9" fill="none" stroke="#fff" stroke-width="1.5"/>`;
         continue;
       }
       if (f >= ws && f <= ws + 4) {
@@ -275,10 +287,10 @@
         continue;
       }
       if (note.root) {
-        svg += `<circle cx="${x}" cy="${y}" r="11" fill="#3b82f6" stroke="#fff" stroke-width="2.5"/>`;
-        svg += `<text x="${x}" y="${y + 4}" fill="#fff" font-size="11" font-weight="700" text-anchor="middle">R</text>`;
+        svg += `<circle cx="${x}" cy="${y}" r="14" fill="#3b82f6" stroke="#fff" stroke-width="2.5"/>`;
+        svg += `<text x="${x}" y="${y + 5}" fill="#fff" font-size="14" font-weight="700" text-anchor="middle">R</text>`;
       } else {
-        svg += `<circle cx="${x}" cy="${y}" r="9" fill="#f0f0f0"/>`;
+        svg += `<circle cx="${x}" cy="${y}" r="12" fill="#f0f0f0"/>`;
       }
     }
 
